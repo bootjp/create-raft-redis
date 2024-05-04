@@ -40,6 +40,8 @@ type Store interface {
 	Close() error
 }
 
-func NewStore() Store {
+var ErrKeyNotFound = store.ErrKeyNotFound
+
+func NewMemoryStore() Store {
 	return store.NewMemoryStore()
 }
