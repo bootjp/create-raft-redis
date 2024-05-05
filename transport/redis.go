@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log"
 	"net"
 	"raft-redis-cluster/raft"
 	"raft-redis-cluster/store"
@@ -16,16 +16,20 @@ import (
 )
 
 type Redis struct {
-	listen net.Listener
-	store  store.Store
-	raft   *hraft.Raft
+	listen      net.Listener
+	store       store.Store
+	stableStore hraft.StableStore
+	id          hraft.ServerID
+	raft        *hraft.Raft
 }
 
 // NewRedis creates a new Redis transport.
-func NewRedis(store store.Store, raft *hraft.Raft) *Redis {
+func NewRedis(id hraft.ServerID, raft *hraft.Raft, store store.Store, stableStore hraft.StableStore) *Redis {
 	return &Redis{
-		store: store,
-		raft:  raft,
+		store:       store,
+		raft:        raft,
+		id:          id,
+		stableStore: stableStore,
 	}
 }
 
@@ -41,7 +45,6 @@ func (r *Redis) Serve(addr string) error {
 func (r *Redis) handle() error {
 	return redcon.Serve(r.listen,
 		func(conn redcon.Conn, cmd redcon.Command) {
-			fmt.Println("cmd", cmd)
 			err := r.validateCmd(cmd)
 			if err != nil {
 				conn.WriteError(err.Error())
@@ -54,7 +57,7 @@ func (r *Redis) handle() error {
 		},
 		func(conn redcon.Conn, err error) {
 			if err != nil {
-				fmt.Println("error:", err)
+				log.Default().Println("error:", err)
 			}
 		},
 	)
@@ -119,6 +122,19 @@ func (r *Redis) processCmd(conn redcon.Conn, cmd redcon.Command) {
 		b, err := json.Marshal(kvCmd)
 		if err != nil {
 			conn.WriteError(err.Error())
+			return
+		}
+
+		// check if the node is the leader
+		if r.raft.State() != hraft.Leader {
+			_, lid := r.raft.LeaderWithID()
+			add, err := store.GetRedisAddrByNodeID(r.stableStore, lid)
+			if err != nil {
+				conn.WriteError(err.Error())
+				return
+			}
+
+			conn.WriteError("MOVED -1 " + add)
 			return
 		}
 
