@@ -1,35 +1,52 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
 	"raft-redis-cluster/raft"
 	"raft-redis-cluster/store"
 	"raft-redis-cluster/transport"
+	"strings"
+	"time"
 
 	hraft "github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 )
 
-var (
-	myAddr        = flag.String("address", "localhost:50051", "TCP host+port for this node")
-	redisAddr     = flag.String("redis_address", "localhost:6379", "TCP host+port for redis")
-	raftId        = flag.String("raft_id", "", "Node id used by Raft")
-	raftDir       = flag.String("raft_data_dir", "data/", "Raft data dir")
-	raftBootstrap = flag.Bool("raft_bootstrap", false, "Whether to bootstrap the Raft cluster")
-)
+// initialPeersList nodeID->address mapping
+type initialPeersList map[string]string
 
-var configs map[string]struct {
-	raftId    string
-	raftDir   string
-	myAddr    string
-	redisAddr string
+func (i *initialPeersList) Set(value string) error {
+	node := strings.Split(value, ",")
+	for _, n := range node {
+		parts := strings.Split(n, "=")
+		if len(parts) != 2 {
+			return errors.New("invalid peer format. expected nodeID=address")
+		}
+		(*i)[parts[0]] = parts[1]
+	}
+	return nil
 }
 
+func (i *initialPeersList) String() string {
+	return fmt.Sprintf("%v", *i)
+}
+
+var (
+	raftAddr     = flag.String("address", "localhost:50051", "TCP host+port for this raft node")
+	redisAddr    = flag.String("redis_address", "localhost:6379", "TCP host+port for redis")
+	raftId       = flag.String("raft_id", "", "Node id used by Raft")
+	raftDir      = flag.String("raft_data_dir", "", "Raft data dir")
+	initialPeers = initialPeersList{}
+)
+
 func init() {
+	flag.Var(&initialPeers, "initial_peers", "Initial peers for the Raft cluster")
 	flag.Parse()
 	validateFlags()
 }
@@ -39,7 +56,7 @@ func validateFlags() {
 		log.Fatalf("flag --raft_id is required")
 	}
 
-	if *myAddr == "" {
+	if *raftAddr == "" {
 		log.Fatalf("flag --address is required")
 	}
 
@@ -53,16 +70,14 @@ func validateFlags() {
 }
 
 func main() {
-	st := raft.NewStateMachine(store.NewMemoryStore())
-	r, err := NewRaft(*raftDir, *raftId, *myAddr, st)
+	datastore := store.NewMemoryStore()
+	st := raft.NewStateMachine(datastore)
+	r, err := NewRaft(*raftDir, *raftId, *raftAddr, st, initialPeers)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	s := store.NewMemoryStore()
-	redis := transport.NewRedis(s, r)
-	fmt.Println(*redisAddr)
-	fmt.Println("Redis server started")
+	redis := transport.NewRedis(datastore, r)
 	err = redis.Serve(*redisAddr)
 	if err != nil {
 		log.Fatalln(err)
@@ -72,7 +87,7 @@ func main() {
 // snapshotRetainCount スナップショットの保持数
 const snapshotRetainCount = 2
 
-func NewRaft(basedir string, id string, address string, fsm hraft.FSM) (*hraft.Raft, error) {
+func NewRaft(basedir string, id string, address string, fsm hraft.FSM, nodes initialPeersList) (*hraft.Raft, error) {
 	c := hraft.DefaultConfig()
 	c.LocalID = hraft.ServerID(id)
 
@@ -93,9 +108,14 @@ func NewRaft(basedir string, id string, address string, fsm hraft.FSM) (*hraft.R
 		return nil, err
 	}
 
-	tm, err := hraft.NewTCPTransport(address, nil, 3, 10, os.Stderr)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
+	}
+
+	tm, err := hraft.NewTCPTransport(address, tcpAddr, 10, time.Second*10, os.Stderr)
+	if err != nil {
+		return nil, err
 	}
 
 	r, err := hraft.NewRaft(c, fsm, ldb, sdb, fss, tm)
@@ -103,20 +123,28 @@ func NewRaft(basedir string, id string, address string, fsm hraft.FSM) (*hraft.R
 		return nil, err
 	}
 
-	if *raftBootstrap {
-		cfg := hraft.Configuration{
-			Servers: []hraft.Server{
-				{
-					Suffrage: hraft.Voter,
-					ID:       hraft.ServerID(id),
-					Address:  hraft.ServerAddress(address),
-				},
+	cfg := hraft.Configuration{
+		Servers: []hraft.Server{
+			{
+				Suffrage: hraft.Voter,
+				ID:       hraft.ServerID(id),
+				Address:  hraft.ServerAddress(address),
 			},
-		}
-		f := r.BootstrapCluster(cfg)
-		if err := f.Error(); err != nil {
-			return nil, err
-		}
+		},
+	}
+
+	// 自分以外の initialPeers を追加
+	for name, addr := range nodes {
+		cfg.Servers = append(cfg.Servers, hraft.Server{
+			Suffrage: hraft.Voter,
+			ID:       hraft.ServerID(name),
+			Address:  hraft.ServerAddress(addr),
+		})
+	}
+
+	f := r.BootstrapCluster(cfg)
+	if err := f.Error(); err != nil {
+		return nil, err
 	}
 
 	return r, nil

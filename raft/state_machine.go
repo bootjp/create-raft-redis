@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"raft-redis-cluster/store"
 
@@ -65,10 +64,6 @@ func (s *StateMachine) Snapshot() (raft.FSMSnapshot, error) {
 var ErrUnknownOp = errors.New("unknown op")
 
 func (s *StateMachine) handleRequest(ctx context.Context, cmd KVCmd) error {
-
-	fmt.Println("ctx", ctx)
-	fmt.Printf("cmd: %+v\n", cmd)
-
 	switch cmd.Op {
 	case Put:
 		return s.store.Put(ctx, cmd.Key, cmd.Val)
