@@ -95,7 +95,20 @@ func (r *Redis) validateCmd(cmd redcon.Command) error {
 }
 
 func (r *Redis) processCmd(conn redcon.Conn, cmd redcon.Command) {
-	ctx := context.TODO()
+	ctx := context.Background()
+
+	// check if the node is the leader
+	if r.raft.State() != hraft.Leader {
+		_, lid := r.raft.LeaderWithID()
+		add, err := store.GetRedisAddrByNodeID(r.stableStore, lid)
+		if err != nil {
+			conn.WriteError(err.Error())
+			return
+		}
+
+		conn.WriteError("MOVED -1 " + add)
+		return
+	}
 
 	plainCmd := strings.ToUpper(string(cmd.Args[commandName]))
 	switch plainCmd {
@@ -122,19 +135,6 @@ func (r *Redis) processCmd(conn redcon.Conn, cmd redcon.Command) {
 		b, err := json.Marshal(kvCmd)
 		if err != nil {
 			conn.WriteError(err.Error())
-			return
-		}
-
-		// check if the node is the leader
-		if r.raft.State() != hraft.Leader {
-			_, lid := r.raft.LeaderWithID()
-			add, err := store.GetRedisAddrByNodeID(r.stableStore, lid)
-			if err != nil {
-				conn.WriteError(err.Error())
-				return
-			}
-
-			conn.WriteError("MOVED -1 " + add)
 			return
 		}
 
