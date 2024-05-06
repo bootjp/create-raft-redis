@@ -106,11 +106,9 @@ func main() {
 // snapshotRetainCount スナップショットの保持数
 const snapshotRetainCount = 2
 
-func NewRaft(basedir string, id string, address string, fsm hraft.FSM, nodes initialPeersList) (*hraft.Raft, hraft.StableStore, error) {
+func NewRaft(baseDir string, id string, address string, fsm hraft.FSM, nodes initialPeersList) (*hraft.Raft, hraft.StableStore, error) {
 	c := hraft.DefaultConfig()
 	c.LocalID = hraft.ServerID(id)
-
-	baseDir := filepath.Join(basedir, id)
 
 	ldb, err := raftboltdb.NewBoltStore(filepath.Join(baseDir, "logs.dat"))
 	if err != nil {

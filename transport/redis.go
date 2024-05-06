@@ -145,6 +145,33 @@ func (r *Redis) processCmd(conn redcon.Conn, cmd redcon.Command) {
 		}
 
 		conn.WriteString("OK")
+	case "DEL":
+		kvCmd := &raft.KVCmd{
+			Op:  raft.Del,
+			Key: cmd.Args[keyName],
+		}
+
+		b, err := json.Marshal(kvCmd)
+		if err != nil {
+			conn.WriteError(err.Error())
+			return
+		}
+
+		f := r.raft.Apply(b, time.Second*1)
+		if f.Error() != nil {
+			conn.WriteError(f.Error().Error())
+			return
+		}
+
+		res := f.Response()
+
+		err, ok := res.(error)
+		if ok {
+			conn.WriteError(err.Error())
+			return
+		}
+
+		conn.WriteInt(1)
 	default:
 		conn.WriteError("ERR unknown command '" + string(cmd.Args[0]) + "'")
 	}
