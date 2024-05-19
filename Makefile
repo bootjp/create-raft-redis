@@ -1,12 +1,15 @@
 SHELL := /bin/bash
 
-run: clean prepare runA runB runC
+.PHONY: run prepare clean runA runB runC
+
+# runA runB runC を同時に実行する
+run: prepare runA runB runC
 
 prepare:
-	mkdir -p /tmp/my-raft-cluster/{nodeA,nodeB,nodeC}
-
-clean:
+	@echo "Preparing..."
 	rm -rf /tmp/my-raft-cluster/
+	mkdir -p /tmp/my-raft-cluster/{nodeA,nodeB,nodeC}
+	@echo "Prepared"
 
 runA:
 	go run main.go --raft_id=nodeA --address=localhost:50051 --redis_address=localhost:63791 --raft_data_dir /tmp/my-raft-cluster/nodeA --initial_peers "nodeB=localhost:50052|localhost:63792,nodeC=localhost:50053|localhost:63793"
