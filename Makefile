@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 run: clean prepare runA runB runC
 
 prepare:
