@@ -59,8 +59,8 @@ func (i *initialPeersList) String() string {
 var (
 	raftAddr     = flag.String("address", "localhost:50051", "TCP host+port for this raft node")
 	redisAddr    = flag.String("redis_address", "localhost:6379", "TCP host+port for redis")
-	raftId       = flag.String("raft_id", "", "Node id used by Raft")
-	raftDir      = flag.String("raft_data_dir", "", "Raft data dir")
+	serverID     = flag.String("server_id", "", "Node id used by Raft")
+	dataDir      = flag.String("data_dir", "", "Raft data dir")
 	initialPeers = initialPeersList{}
 )
 
@@ -71,8 +71,8 @@ func init() {
 }
 
 func validateFlags() {
-	if *raftId == "" {
-		log.Fatalf("flag --raft_id is required")
+	if *serverID == "" {
+		log.Fatalf("flag --server_id is required")
 	}
 
 	if *raftAddr == "" {
@@ -83,7 +83,7 @@ func validateFlags() {
 		log.Fatalf("flag --redis_address is required")
 	}
 
-	if *raftDir == "" {
+	if *dataDir == "" {
 		log.Fatalf("flag --raft_data_dir is required")
 	}
 }
@@ -91,12 +91,12 @@ func validateFlags() {
 func main() {
 	datastore := store.NewMemoryStore()
 	st := raft.NewStateMachine(datastore)
-	r, sdb, err := NewRaft(*raftDir, *raftId, *raftAddr, st, initialPeers)
+	r, sdb, err := NewRaft(*dataDir, *serverID, *raftAddr, st, initialPeers)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	redis := transport.NewRedis(hraft.ServerID(*raftId), r, datastore, sdb)
+	redis := transport.NewRedis(hraft.ServerID(*serverID), r, datastore, sdb)
 	err = redis.Serve(*redisAddr)
 	if err != nil {
 		log.Fatalln(err)
