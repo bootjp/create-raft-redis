@@ -84,7 +84,7 @@ func validateFlags() {
 	}
 
 	if *dataDir == "" {
-		log.Fatalf("flag --raft_data_dir is required")
+		log.Fatalf("flag --data_dir is required")
 	}
 }
 
