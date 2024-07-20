@@ -75,20 +75,21 @@ const (
 	value       = 2
 )
 
+var ErrArgsLen = errors.New("ERR wrong number of arguments for command")
+
 func (r *Redis) validateCmd(cmd redcon.Command) error {
 	if len(cmd.Args) == 0 {
-		return errors.New("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return ErrArgsLen
 	}
 
 	if len(cmd.Args) < argsLen[string(cmd.Args[commandName])] {
-		return errors.New("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return ErrArgsLen
 	}
 
 	// check args length
 	plainCmd := strings.ToUpper(string(cmd.Args[commandName]))
-
 	if len(cmd.Args) != argsLen[plainCmd] {
-		return errors.New("ERR wrong number of arguments for '" + string(cmd.Args[0]) + "' command")
+		return ErrArgsLen
 	}
 
 	return nil
