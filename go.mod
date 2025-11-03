@@ -4,8 +4,8 @@ go 1.22.2
 
 require (
 	github.com/bootjp/go-kvlib v0.0.0-20240406094546-4db695714980
-	github.com/hashicorp/raft v1.6.1
-	github.com/hashicorp/raft-boltdb v0.0.0-20231211162105-6c830fa4535e
+	github.com/hashicorp/raft v1.7.3
+	github.com/hashicorp/raft-boltdb v0.0.0-20250926130943-f41fa5f23d89
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/redcon v1.6.2
@@ -20,6 +20,7 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
+	github.com/hashicorp/go-metrics v0.5.4 // indirect
 	github.com/hashicorp/go-msgpack v0.5.5 // indirect
 	github.com/hashicorp/go-msgpack/v2 v2.1.2 // indirect
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
