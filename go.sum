@@ -96,6 +96,8 @@ github.com/hashicorp/raft-boltdb v0.0.0-20231211162105-6c830fa4535e h1:SK4y8oR4Z
 github.com/hashicorp/raft-boltdb v0.0.0-20231211162105-6c830fa4535e/go.mod h1:EMz/UIuG93P0MBeHh6CbXQAEe8ckVJLZjhD17lBzK5Q=
 github.com/hashicorp/raft-boltdb v0.0.0-20250926130943-f41fa5f23d89 h1:ag4+tssV3yio7M69/LGNTUbM4mWNQzONtDBmaLI8xuM=
 github.com/hashicorp/raft-boltdb v0.0.0-20250926130943-f41fa5f23d89/go.mod h1:sgCxzMuvQ3huVxgmeDdj73YIMmezWZ40HQu2IPmjJWk=
+github.com/hashicorp/raft-boltdb v0.0.0-20251103221153-05f9dd7a5148 h1:tjaIHlfKX22DCCPTx2mK+6N/kTP9DV7B3bxEUyQtjKA=
+github.com/hashicorp/raft-boltdb v0.0.0-20251103221153-05f9dd7a5148/go.mod h1:sgCxzMuvQ3huVxgmeDdj73YIMmezWZ40HQu2IPmjJWk=
 github.com/josharian/intern v1.0.0/go.mod h1:5DoeVV0s6jJacbCEi61lwdGj/aVlrQvzHFFd8Hwg//Y=
 github.com/jpillora/backoff v1.0.0/go.mod h1:J/6gKK9jxlEcS3zixgDgUAsiuZ7yrSoa/FX5e0EB2j4=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
