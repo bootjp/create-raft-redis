@@ -1,9 +1,9 @@
 module raft-redis-cluster
 
-go 1.22.2
+go 1.23
 
 require (
-	github.com/bootjp/go-kvlib v0.0.0-20240406094546-4db695714980
+	github.com/bootjp/go-kvlib v1.0.0
 	github.com/hashicorp/raft v1.7.3
 	github.com/hashicorp/raft-boltdb v0.0.0-20251103221153-05f9dd7a5148
 	github.com/tidwall/redcon v1.6.2
@@ -25,6 +25,6 @@ require (
 	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/tidwall/btree v1.7.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
-	go.etcd.io/bbolt v1.3.9 // indirect
-	golang.org/x/sys v0.20.0 // indirect
+	go.etcd.io/bbolt v1.4.3 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 )
