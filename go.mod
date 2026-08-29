@@ -6,7 +6,7 @@ require (
 	github.com/bootjp/go-kvlib v0.0.0-20240406094546-4db695714980
 	github.com/hashicorp/raft v1.7.3
 	github.com/hashicorp/raft-boltdb v0.0.0-20251103221153-05f9dd7a5148
-	github.com/tidwall/redcon v1.6.2
+	github.com/tidwall/redcon v1.6.4
 )
 
 require (
